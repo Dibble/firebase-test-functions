@@ -24,9 +24,10 @@ exports.getMyGames = functions.https.onRequest((request, response) => {
       return
     }
 
+    let user = null
     try {
       let idToken = request.headers.authorization.split('Bearer ')[1]
-      let user = await admin.auth().verifyIdToken(idToken)
+      user = await admin.auth().verifyIdToken(idToken)
       console.log(user)
     } catch (error) {
       console.log(`login error ${error}`)
@@ -34,6 +35,22 @@ exports.getMyGames = functions.https.onRequest((request, response) => {
       return
     }
 
-    response.send('games listed here')
+    let userQuery = await admin.firestore().collection('users').where('userUID', '==', user.uid).get()
+    if (userQuery.size !== 1) {
+      response.status(404).send('User not found')
+      return
+    }
+
+    let gameRefs = await userQuery.docs[0].get('games')
+    let games = await Promise.all(gameRefs.map(async gameRef => {
+      let game = await gameRef.get()
+
+      return {
+        id: game.id,
+        name: game.get('name')
+      }
+    }))
+
+    response.send(games)
   })
 })
