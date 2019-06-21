@@ -5,19 +5,12 @@ const cors = require('cors')({ origin: true })
 
 admin.initializeApp()
 
-// Create and Deploy Your First Cloud Functions
-// https://firebase.google.com/docs/functions/write-firebase-functions
-
-exports.helloWorld = functions.https.onRequest((request, response) => {
-  response.send("Hello from Firebase!")
-})
-
 exports.createUser = functions.auth.user().onCreate(async (user) => {
   let writeResult = await admin.firestore().collection('users').add({ userUID: user.uid })
   console.log(writeResult)
 })
 
-exports.getMyGames = functions.https.onRequest((request, response) => {
+exports.getMyGames = functions.region('europe-west2').https.onRequest((request, response) => {
   cors(request, response, async () => {
     if (!request.headers.authorization || !request.headers.authorization.startsWith('Bearer ')) {
       response.status(401).send('Unauthorized')
@@ -28,7 +21,6 @@ exports.getMyGames = functions.https.onRequest((request, response) => {
     try {
       let idToken = request.headers.authorization.split('Bearer ')[1]
       user = await admin.auth().verifyIdToken(idToken)
-      console.log(user)
     } catch (error) {
       console.log(`login error ${error}`)
       response.status(403).send('Unauthorized')
@@ -42,6 +34,12 @@ exports.getMyGames = functions.https.onRequest((request, response) => {
     }
 
     let gameRefs = await userQuery.docs[0].get('games')
+    if (gameRefs.length === 0) {
+      console.log('no games found')
+      response.status(200).send([])
+      return
+    }
+
     let games = await Promise.all(gameRefs.map(async gameRef => {
       let game = await gameRef.get()
 
@@ -51,6 +49,85 @@ exports.getMyGames = functions.https.onRequest((request, response) => {
       }
     }))
 
-    response.send(games)
+    response.status(200).send(games)
   })
 })
+
+exports.createGame = functions.region('europe-west2').https.onRequest((request, response) => {
+  cors(request, response, async () => {
+    if (!request.headers.authorization || !request.headers.authorization.startsWith('Bearer ')) {
+      response.status(401).send('Unauthorized')
+      return
+    }
+
+    let user = null
+    try {
+      let idToken = request.headers.authorization.split('Bearer ')[1]
+      user = await admin.auth().verifyIdToken(idToken)
+    } catch (error) {
+      console.log(`login error ${error}`)
+      response.status(403).send('Unauthorized')
+      return
+    }
+
+    let gameName = request.body.name
+    console.log(`game name ${gameName}`)
+    let userQuery = await admin.firestore().collection('users').where('userUID', '==', user.uid).get()
+    if (userQuery.size !== 1) {
+      console.error(`found multiple users for UID ${user.uid}`)
+      response.status(500).send('duplicate users found')
+      return
+    }
+
+    let userRef = userQuery.docs[0].ref
+    console.log(`userRef ${userRef}`)
+
+    let newGameRef
+    try {
+      newGameRef = await admin.firestore().collection('games').add({ name: gameName, players: [userRef] })
+    } catch (err) {
+      console.error(`error creating new game ${err}`)
+      response.status(500).send('error creating new game')
+    }
+
+    console.log(`newGameRef ${newGameRef}`)
+
+    let existingUserGames = userQuery.docs[0].get('games')
+    let newUserGames = existingUserGames.concat([newGameRef])
+    console.log(newUserGames)
+
+    try {
+      await userRef.update({ 'games': newUserGames })
+    } catch (err) {
+      console.error(`error updating user ${err}`)
+    }
+
+    response.status(201).send(JSON.stringify({ id: newGameRef.id, name: gameName }))
+  })
+})
+
+exports.joinGame = functions.region('europe-west2').https.onRequest((request, response) => {
+  cors(request, response, async () => {
+    if (!request.headers.authorization || !request.headers.authorization.startsWith('Bearer ')) {
+      response.status(401).send('Unauthorized')
+      return
+    }
+
+    let user = null
+    try {
+      let idToken = request.headers.authorization.split('Bearer ')[1]
+      user = await admin.auth().verifyIdToken(idToken)
+    } catch (error) {
+      console.log(`login error ${error}`)
+      response.status(403).send('Unauthorized')
+      return
+    }
+
+    let gameID = request.body.gameID
+    let game = await admin.firestore().collection('games').doc(gameID)
+    console.log(game)
+
+    response.status(200).send('done')
+  })
+})
+
