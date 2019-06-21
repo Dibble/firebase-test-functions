@@ -34,7 +34,7 @@ exports.getMyGames = functions.region('europe-west2').https.onRequest((request, 
     }
 
     let gameRefs = await userQuery.docs[0].get('games')
-    if (gameRefs.length === 0) {
+    if (!gameRefs || gameRefs.length === 0) {
       console.log('no games found')
       response.status(200).send([])
       return
@@ -124,10 +124,28 @@ exports.joinGame = functions.region('europe-west2').https.onRequest((request, re
     }
 
     let gameID = request.body.gameID
-    let game = await admin.firestore().collection('games').doc(gameID)
-    console.log(game)
+    let gameRef = await admin.firestore().collection('games').doc(gameID)
+
+    let currentUserQuery = await admin.firestore().collection('users').where('userUID', '==', user.uid).get()
+    console.log(currentUserQuery)
+    let currentUser = currentUserQuery.docs[0]
+    let currentUserRef = currentUser.ref
+
+    let game = await gameRef.get()
+    let existingPlayers = game.get('players')
+    let newPlayers = existingPlayers.concat([currentUserRef])
+    await gameRef.update({ 'players': newPlayers })
+
+    let existingGames = currentUser.get('games')
+    let newGames
+    if (existingGames) {
+      newGames = existingGames.concat([gameRef])
+    } else {
+      newGames = [gameRef]
+    }
+
+    await currentUserRef.update({ 'games': newGames })
 
     response.status(200).send('done')
   })
 })
-
