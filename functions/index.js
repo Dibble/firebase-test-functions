@@ -65,7 +65,6 @@ exports.createGame = functions.region('europe-west2').https.onRequest((request, 
 
     let existingUserGames = userQuery.docs[0].get('games')
     let newUserGames = existingUserGames.concat([newGameRef])
-    console.log(newUserGames)
 
     try {
       await userRef.update({ 'games': newUserGames })
@@ -90,7 +89,6 @@ exports.joinGame = functions.region('europe-west2').https.onRequest((request, re
     let gameRef = await admin.firestore().collection('games').doc(gameID)
 
     let currentUserQuery = await admin.firestore().collection('users').where('userUID', '==', user.uid).get()
-    console.log(currentUserQuery)
     let currentUser = currentUserQuery.docs[0]
     let currentUserRef = currentUser.ref
 
@@ -110,5 +108,28 @@ exports.joinGame = functions.region('europe-west2').https.onRequest((request, re
     await currentUserRef.update({ 'games': newGames })
 
     response.status(200).send(await games.getByRef(gameRef))
+  })
+})
+
+exports.getGameDetail = functions.region('europe-west2').https.onRequest((request, response) => {
+  cors(request, response, async () => {
+    const { success, errorStatus } = await authenticateRequest(request)
+    if (!success) {
+      response.status(errorStatus).send('Unauthorized')
+      return
+    }
+
+    let gameId = request.query.id
+    console.log(gameId)
+    let gameRef = admin.firestore().collection('games').doc(gameId)
+
+    if (!gameRef) {
+      console.log('game not found', gameId)
+      response.status(404).send('Not Found')
+      return
+    }
+
+    let gameDetail = await games.getByRef(gameRef)
+    response.status(200).send(gameDetail)
   })
 })
