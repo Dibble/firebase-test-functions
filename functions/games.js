@@ -19,4 +19,4 @@ const getByRefs = async (gameRefs) => {
   return await Promise.all(gameRefs.map(async (gameRef) => await getByRef(gameRef)))
 }
 
-module.exports = { getByRefs }
+module.exports = { getByRef, getByRefs }

@@ -47,7 +47,6 @@ exports.createGame = functions.region('europe-west2').https.onRequest((request, 
     }
 
     let gameName = request.body.name
-    console.log(`game name ${gameName}`)
     let userQuery = await admin.firestore().collection('users').where('userUID', '==', user.uid).get()
     if (userQuery.size !== 1) {
       console.error(`found multiple users for UID ${user.uid}`)
@@ -56,8 +55,6 @@ exports.createGame = functions.region('europe-west2').https.onRequest((request, 
     }
 
     let userRef = userQuery.docs[0].ref
-    console.log(`userRef ${userRef}`)
-
     let newGameRef
     try {
       newGameRef = await admin.firestore().collection('games').add({ name: gameName, players: [userRef] })
@@ -65,8 +62,6 @@ exports.createGame = functions.region('europe-west2').https.onRequest((request, 
       console.error(`error creating new game ${err}`)
       response.status(500).send('error creating new game')
     }
-
-    console.log(`newGameRef ${newGameRef}`)
 
     let existingUserGames = userQuery.docs[0].get('games')
     let newUserGames = existingUserGames.concat([newGameRef])
@@ -78,7 +73,8 @@ exports.createGame = functions.region('europe-west2').https.onRequest((request, 
       console.error(`error updating user ${err}`)
     }
 
-    response.status(201).send(JSON.stringify({ id: newGameRef.id, name: gameName }))
+    let createdGame = await games.getByRef(newGameRef)
+    response.status(201).send(createdGame)
   })
 })
 
@@ -113,6 +109,6 @@ exports.joinGame = functions.region('europe-west2').https.onRequest((request, re
 
     await currentUserRef.update({ 'games': newGames })
 
-    response.status(200).send('done')
+    response.status(200).send(await games.getByRef(gameRef))
   })
 })
