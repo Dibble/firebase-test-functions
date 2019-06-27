@@ -1,11 +1,9 @@
 const admin = require('firebase-admin')
 
-const authenticateRequest = async (request) => {
+const auth = async (request, response, httpHandler) => {
   if (!request.headers.authorization || !request.headers.authorization.startsWith('Bearer ')) {
-    return {
-      success: false,
-      errorStatus: 401
-    }
+    response.status(401).send('Unauthorized')
+    return
   }
 
   let user = null
@@ -14,16 +12,11 @@ const authenticateRequest = async (request) => {
     user = await admin.auth().verifyIdToken(idToken)
   } catch (error) {
     console.log(`login error ${error}`)
-    return {
-      success: false,
-      errorStatus: 403
-    }
+    response.status(403).send('Unauthorized')
+    return
   }
 
-  return {
-    success: true,
-    user
-  }
+  await httpHandler(user)
 }
 
-module.exports = { authenticateRequest }
+module.exports = { auth }
