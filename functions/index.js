@@ -87,6 +87,12 @@ exports.joinGame = functions.region('europe-west2').https.onRequest((request, re
 
       let game = await gameRef.get()
       let existingPlayers = game.get('players')
+
+      if (existingPlayers.length >= 7) {
+        response.status(400).send('game is full')
+        return
+      }
+
       let newPlayers = existingPlayers.concat([currentUserRef])
       await gameRef.update({ 'players': newPlayers })
 
