@@ -4,7 +4,8 @@ const getByRef = async (gameRef) => {
     let player = await playerRef.get()
     return {
       id: playerRef.id,
-      name: player.get('displayName')
+      name: player.get('displayName'),
+      country: game.get('countryMap')[playerRef.id]
     }
   }))
 
