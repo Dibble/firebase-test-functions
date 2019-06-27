@@ -89,6 +89,12 @@ exports.joinGame = functions.region('europe-west2').https.onRequest((request, re
     let gameRef = await admin.firestore().collection('games').doc(gameID)
 
     let currentUserQuery = await admin.firestore().collection('users').where('userUID', '==', user.uid).get()
+    if (currentUserQuery.size !== 1) {
+      console.log('failed to find user in DB')
+      response.status(500).send('failed to find user')
+      return
+    }
+
     let currentUser = currentUserQuery.docs[0]
     let currentUserRef = currentUser.ref
 

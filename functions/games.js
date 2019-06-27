@@ -1,10 +1,17 @@
+const admin = require('firebase-admin')
+
 const getByRef = async (gameRef) => {
   let game = await gameRef.get()
   let gamePlayers = await Promise.all(game.get('players').map(async playerRef => {
     let player = await playerRef.get()
+    let userUID = player.get('userUID')
+    let user = await admin.auth().getUser(userUID)
+
     return {
       id: playerRef.id,
-      name: player.get('displayName'),
+      userUID,
+      email: user.email,
+      name: user.displayName,
       country: game.get('countryMap')[playerRef.id]
     }
   }))
