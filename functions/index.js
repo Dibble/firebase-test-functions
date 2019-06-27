@@ -35,10 +35,12 @@ exports.getMyGames = functions.region('europe-west2').https.onRequest((request, 
 
     let games = await Promise.all(gameRefs.map(async gameRef => {
       let game = await gameRef.get()
+      let gamePlayers = game.get('players')
 
       return {
         id: game.id,
-        name: game.get('name')
+        name: game.get('name'),
+        players: gamePlayers
       }
     }))
 
