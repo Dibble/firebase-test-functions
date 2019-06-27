@@ -8,7 +8,7 @@ const { authenticateRequest } = require('./auth')
 admin.initializeApp()
 
 exports.createUser = functions.auth.user().onCreate(async (user) => {
-  let writeResult = await admin.firestore().collection('users').add({ userUID: user.uid })
+  let writeResult = await admin.firestore().collection('users').add({ userUID: user.uid, games: [], displayName: user.displayName })
   console.log(writeResult)
 })
 
@@ -35,7 +35,13 @@ exports.getMyGames = functions.region('europe-west2').https.onRequest((request, 
 
     let games = await Promise.all(gameRefs.map(async gameRef => {
       let game = await gameRef.get()
-      let gamePlayers = game.get('players')
+      let gamePlayers = await Promise.all(game.get('players').map(async playerRef => {
+        let player = await playerRef.get()
+        return {
+          id: playerRef.id,
+          name: player.get('displayName')
+        }
+      }))
 
       return {
         id: game.id,
