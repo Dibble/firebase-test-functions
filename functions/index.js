@@ -3,6 +3,8 @@ const admin = require('firebase-admin')
 
 const cors = require('cors')({ origin: true })
 
+const { authenticateRequest } = require('./auth')
+
 admin.initializeApp()
 
 exports.createUser = functions.auth.user().onCreate(async (user) => {
@@ -12,18 +14,9 @@ exports.createUser = functions.auth.user().onCreate(async (user) => {
 
 exports.getMyGames = functions.region('europe-west2').https.onRequest((request, response) => {
   cors(request, response, async () => {
-    if (!request.headers.authorization || !request.headers.authorization.startsWith('Bearer ')) {
-      response.status(401).send('Unauthorized')
-      return
-    }
-
-    let user = null
-    try {
-      let idToken = request.headers.authorization.split('Bearer ')[1]
-      user = await admin.auth().verifyIdToken(idToken)
-    } catch (error) {
-      console.log(`login error ${error}`)
-      response.status(403).send('Unauthorized')
+    const { success, errorStatus, user } = await authenticateRequest(request)
+    if (!success) {
+      response.status(errorStatus).send('Unauthorized')
       return
     }
 
@@ -55,18 +48,9 @@ exports.getMyGames = functions.region('europe-west2').https.onRequest((request, 
 
 exports.createGame = functions.region('europe-west2').https.onRequest((request, response) => {
   cors(request, response, async () => {
-    if (!request.headers.authorization || !request.headers.authorization.startsWith('Bearer ')) {
-      response.status(401).send('Unauthorized')
-      return
-    }
-
-    let user = null
-    try {
-      let idToken = request.headers.authorization.split('Bearer ')[1]
-      user = await admin.auth().verifyIdToken(idToken)
-    } catch (error) {
-      console.log(`login error ${error}`)
-      response.status(403).send('Unauthorized')
+    const { success, errorStatus, user } = await authenticateRequest(request)
+    if (!success) {
+      response.status(errorStatus).send('Unauthorized')
       return
     }
 
@@ -108,18 +92,9 @@ exports.createGame = functions.region('europe-west2').https.onRequest((request, 
 
 exports.joinGame = functions.region('europe-west2').https.onRequest((request, response) => {
   cors(request, response, async () => {
-    if (!request.headers.authorization || !request.headers.authorization.startsWith('Bearer ')) {
-      response.status(401).send('Unauthorized')
-      return
-    }
-
-    let user = null
-    try {
-      let idToken = request.headers.authorization.split('Bearer ')[1]
-      user = await admin.auth().verifyIdToken(idToken)
-    } catch (error) {
-      console.log(`login error ${error}`)
-      response.status(403).send('Unauthorized')
+    const { success, errorStatus, user } = await authenticateRequest(request)
+    if (!success) {
+      response.status(errorStatus).send('Unauthorized')
       return
     }
 
