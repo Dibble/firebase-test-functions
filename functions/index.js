@@ -115,7 +115,6 @@ exports.getGameDetail = functions.region('europe-west2').https.onRequest((reques
   cors(request, response, async () => {
     await auth(request, response, async (user) => {
       let gameId = request.query.id
-      console.log(gameId)
       let gameRef = admin.firestore().collection('games').doc(gameId)
 
       if (!gameRef) {
@@ -126,6 +125,39 @@ exports.getGameDetail = functions.region('europe-west2').https.onRequest((reques
 
       let gameDetail = await games.getByRef(gameRef)
       response.status(200).send(gameDetail)
+    })
+  })
+})
+
+exports.assignCountries = functions.region('europe-west2').https.onRequest((request, response) => {
+  cors(request, response, async () => {
+    await auth(request, response, async (user) => {
+      const gameId = request.body.gameID
+      console.log(request.body, gameId)
+      const gameRef = admin.firestore().collection('games').doc(gameId)
+      if (!gameRef) {
+        console.log('game not found', gameId)
+        response.status(400).send('game not found')
+        return
+      }
+
+      const game = await gameRef.get()
+      let players = game.get('players')
+      let unassignedCountries = ['Austria', 'England', 'France', 'Germany', 'Italy', 'Russia', 'Turkey']
+
+      let countryMap = {}
+      for (let i = 0; i < players.length; i++) {
+        let countryIndex = Math.floor(Math.random() * unassignedCountries.length)
+        countryMap[players[i].id] = unassignedCountries[countryIndex]
+
+        unassignedCountries.splice(countryIndex, 1)
+      }
+      console.log(JSON.stringify(countryMap))
+
+      await gameRef.update({ 'countryMap': countryMap })
+      let updatedGame = await games.getByRef(gameRef)
+
+      response.status(200).send(updatedGame)
     })
   })
 })
