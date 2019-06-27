@@ -4,6 +4,7 @@ const admin = require('firebase-admin')
 const cors = require('cors')({ origin: true })
 
 const { authenticateRequest } = require('./auth')
+const games = require('./games')
 
 admin.initializeApp()
 
@@ -33,24 +34,7 @@ exports.getMyGames = functions.region('europe-west2').https.onRequest((request, 
       return
     }
 
-    let games = await Promise.all(gameRefs.map(async gameRef => {
-      let game = await gameRef.get()
-      let gamePlayers = await Promise.all(game.get('players').map(async playerRef => {
-        let player = await playerRef.get()
-        return {
-          id: playerRef.id,
-          name: player.get('displayName')
-        }
-      }))
-
-      return {
-        id: game.id,
-        name: game.get('name'),
-        players: gamePlayers
-      }
-    }))
-
-    response.status(200).send(games)
+    response.status(200).send(await games.getByRefs(gameRefs))
   })
 })
 
