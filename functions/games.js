@@ -9,40 +9,40 @@ const orderedStates = [
 
 const startingUnits = {
   'Austria': [
-    { 'location': 'vie', 'type': 'A' },
-    { 'location': 'bud', 'type': 'A' },
-    { 'location': 'tri', 'type': 'F' }
+    { 'location': 'Vienna', 'type': 'A' },
+    { 'location': 'Budapest', 'type': 'A' },
+    { 'location': 'Trieste', 'type': 'F' },
   ],
   'England': [
-    { 'location': 'lon', 'type': 'F' },
-    { 'location': 'edi', 'type': 'F' },
-    { 'location': 'lvp', 'type': 'A' }
+    { 'location': 'London', 'type': 'F' },
+    { 'location': 'Edinburgh', 'type': 'F' },
+    { 'location': 'Liverpool', 'type': 'A' },
   ],
   'France': [
-    { 'location': 'par', 'type': 'A' },
-    { 'location': 'mar', 'type': 'A' },
-    { 'location': 'bre', 'type': 'F' }
+    { 'location': 'Paris', 'type': 'A' },
+    { 'location': 'Marseilles', 'type': 'A' },
+    { 'location': 'Brest', 'type': 'F' },
   ],
   'Germany': [
-    { 'location': 'ber', 'type': 'A' },
-    { 'location': 'mun', 'type': 'A' },
-    { 'location': 'kie', 'type': 'F' }
+    { 'location': 'Berlin', 'type': 'A' },
+    { 'location': 'Munich', 'type': 'A' },
+    { 'location': 'Kiel', 'type': 'F' },
   ],
   'Italy': [
-    { 'location': 'rom', 'type': 'A' },
-    { 'location': 'ven', 'type': 'A' },
-    { 'location': 'nap', 'type': 'F' }
+    { 'location': 'Rome', 'type': 'A' },
+    { 'location': 'Venice', 'type': 'A' },
+    { 'location': 'Naples', 'type': 'F' },
   ],
   'Russia': [
-    { 'location': 'mos', 'type': 'A' },
-    { 'location': 'sev', 'type': 'F' },
-    { 'location': 'war', 'type': 'A' },
-    { 'location': 'stp', 'type': 'F' }
+    { 'location': 'Moscow', 'type': 'A' },
+    { 'location': 'Sevastopol', 'type': 'F' },
+    { 'location': 'Warsaw', 'type': 'A' },
+    { 'location': 'St. Petersburg', 'type': 'F' },
   ],
   'Turkey': [
-    { 'location': 'ank', 'type': 'F' },
-    { 'location': 'con', 'type': 'A' },
-    { 'location': 'smy', 'type': 'A' }
+    { 'location': 'Ankara', 'type': 'F' },
+    { 'location': 'Constantinople', 'type': 'A' },
+    { 'location': 'Smyrna', 'type': 'A' },
   ]
 }
 
@@ -68,7 +68,7 @@ const getByRef = async (gameRef) => {
       email: user.email,
       name: user.displayName,
       country,
-      units: game.get('units')[country]
+      units: game.get('units') ? game.get('units')[country] : null
     }
   }))
 
