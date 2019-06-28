@@ -8,42 +8,42 @@ const orderedStates = [
 ]
 
 const startingUnits = {
-  'Austria': {
-    'vie': 'A',
-    'bud': 'A',
-    'tri': 'F'
-  },
-  'England': {
-    'lon': 'F',
-    'edi': 'F',
-    'lvp': 'A'
-  },
-  'France': {
-    'par': 'A',
-    'mar': 'A',
-    'bre': 'F'
-  },
-  'Germany': {
-    'ber': 'A',
-    'mun': 'A',
-    'kie': 'F'
-  },
-  'Italy': {
-    'rom': 'A',
-    'ven': 'A',
-    'nap': 'F'
-  },
-  'Russia': {
-    'mos': 'A',
-    'sev': 'F',
-    'war': 'A',
-    'stp': 'F'
-  },
-  'Turkey': {
-    'ank': 'F',
-    'con': 'A',
-    'smy': 'A'
-  }
+  'Austria': [
+    { 'location': 'vie', 'type': 'A' },
+    { 'location': 'bud', 'type': 'A' },
+    { 'location': 'tri', 'type': 'F' }
+  ],
+  'England': [
+    { 'location': 'lon', 'type': 'F' },
+    { 'location': 'edi', 'type': 'F' },
+    { 'location': 'lvp', 'type': 'A' }
+  ],
+  'France': [
+    { 'location': 'par', 'type': 'A' },
+    { 'location': 'mar', 'type': 'A' },
+    { 'location': 'bre', 'type': 'F' }
+  ],
+  'Germany': [
+    { 'location': 'ber', 'type': 'A' },
+    { 'location': 'mun', 'type': 'A' },
+    { 'location': 'kie', 'type': 'F' }
+  ],
+  'Italy': [
+    { 'location': 'rom', 'type': 'A' },
+    { 'location': 'ven', 'type': 'A' },
+    { 'location': 'nap', 'type': 'F' }
+  ],
+  'Russia': [
+    { 'location': 'mos', 'type': 'A' },
+    { 'location': 'sev', 'type': 'F' },
+    { 'location': 'war', 'type': 'A' },
+    { 'location': 'stp', 'type': 'F' }
+  ],
+  'Turkey': [
+    { 'location': 'ank', 'type': 'F' },
+    { 'location': 'con', 'type': 'A' },
+    { 'location': 'smy', 'type': 'A' }
+  ]
 }
 
 const startGame = async (gameRef) => {
@@ -60,14 +60,15 @@ const getByRef = async (gameRef) => {
     let player = await playerRef.get()
     let userUID = player.get('userUID')
     let user = await admin.auth().getUser(userUID)
+    let country = game.get('countryMap')[playerRef.id]
 
     return {
       id: playerRef.id,
       userUID,
       email: user.email,
       name: user.displayName,
-      country: game.get('countryMap')[playerRef.id],
-      units: game.get('units')
+      country,
+      units: game.get('units')[country]
     }
   }))
 
