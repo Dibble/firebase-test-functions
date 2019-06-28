@@ -161,3 +161,27 @@ exports.assignCountries = functions.region('europe-west2').https.onRequest((requ
     })
   })
 })
+
+exports.startGame = functions.region('europe-west2').https.onRequest((request, response) => {
+  cors(request, response, async () => {
+    await auth(request, response, async (user) => {
+      const gameID = request.body.gameID
+      const gameRef = admin.firestore().collection('games').doc(gameID)
+      if (!gameRef) {
+        console.log('game not found', gameId)
+        response.status(400).send('game not found')
+        return
+      }
+
+      try {
+        await games.startGame(gameRef)
+      } catch (err) {
+        console.error('failed to start game', err)
+        response.status(500).send('failed to start game')
+        return
+      }
+
+      response.status(200).send(await games.getByRef(gameRef))
+    })
+  })
+})
