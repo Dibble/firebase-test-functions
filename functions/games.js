@@ -1,5 +1,12 @@
 const admin = require('firebase-admin')
 
+const orderedStates = [
+  'Setup',
+  'Countries Assigned',
+  'Active',
+  'Complete'
+]
+
 const getByRef = async (gameRef) => {
   let game = await gameRef.get()
   let gamePlayers = await Promise.all(game.get('players').map(async playerRef => {
@@ -19,7 +26,8 @@ const getByRef = async (gameRef) => {
   return {
     id: gameRef.id,
     name: game.get('name'),
-    players: gamePlayers
+    players: gamePlayers,
+    currentState: game.get('currentState')
   }
 }
 

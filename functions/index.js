@@ -48,7 +48,7 @@ exports.createGame = functions.region('europe-west2').https.onRequest((request, 
       let userRef = userQuery.docs[0].ref
       let newGameRef
       try {
-        newGameRef = await admin.firestore().collection('games').add({ name: gameName, players: [userRef], countryMap: {} })
+        newGameRef = await admin.firestore().collection('games').add({ name: gameName, players: [userRef], countryMap: {}, status: 'Setup' })
       } catch (err) {
         console.error(`error creating new game ${err}`)
         response.status(500).send('error creating new game')
@@ -154,7 +154,7 @@ exports.assignCountries = functions.region('europe-west2').https.onRequest((requ
       }
       console.log(JSON.stringify(countryMap))
 
-      await gameRef.update({ 'countryMap': countryMap })
+      await gameRef.update({ 'countryMap': countryMap, currentState: 'Countries Assigned' })
       let updatedGame = await games.getByRef(gameRef)
 
       response.status(200).send(updatedGame)
