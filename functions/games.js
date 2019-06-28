@@ -60,7 +60,7 @@ const getByRef = async (gameRef) => {
     let player = await playerRef.get()
     let userUID = player.get('userUID')
     let user = await admin.auth().getUser(userUID)
-    let country = game.get('countryMap')[playerRef.id]
+    let country = game.get('countryMap') ? game.get('countryMap')[playerRef.id] : null
 
     return {
       id: playerRef.id,
