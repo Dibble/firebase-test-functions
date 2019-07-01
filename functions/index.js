@@ -48,7 +48,7 @@ exports.createGame = functions.region('europe-west2').https.onRequest((request, 
       let userRef = userQuery.docs[0].ref
       let newGameRef
       try {
-        newGameRef = await admin.firestore().collection('games').add({ name: gameName, players: [userRef], countryMap: {}, status: 'Setup' })
+        newGameRef = await admin.firestore().collection('games').add({ name: gameName, players: [userRef], countryMap: {}, currentState: 'Setup' })
       } catch (err) {
         console.error(`error creating new game ${err}`)
         response.status(500).send('error creating new game')

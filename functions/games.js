@@ -37,7 +37,7 @@ const startingUnits = {
     { 'location': 'Moscow', 'type': 'A' },
     { 'location': 'Sevastopol', 'type': 'F' },
     { 'location': 'Warsaw', 'type': 'A' },
-    { 'location': 'St. Petersburg', 'type': 'F' },
+    { 'location': 'St. Petersburg (SC)', 'type': 'F' },
   ],
   'Turkey': [
     { 'location': 'Ankara', 'type': 'F' },
