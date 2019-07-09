@@ -8,7 +8,7 @@ const games = require('./games')
 
 admin.initializeApp()
 
-exports.createUser = functions.auth.user().onCreate(async (user) => {
+exports.createUser = functions.region('europe-west2').auth.user().onCreate(async (user) => {
   let writeResult = await admin.firestore().collection('users').add({ userUID: user.uid, games: [], displayName: user.displayName })
   console.log(writeResult)
 })
@@ -182,6 +182,89 @@ exports.startGame = functions.region('europe-west2').https.onRequest((request, r
       }
 
       response.status(200).send(await games.getByRef(gameRef))
+    })
+  })
+})
+
+exports.submitOrders = functions.region('europe-west2').https.onRequest((request, response) => {
+  cors(request, response, async () => {
+    await auth(request, response, async (user) => {
+      const { gameID, round, orders } = request.body
+      const gameRef = admin.firestore().collection('games').doc(gameID)
+      if (!gameRef) {
+        console.log('game not found', gameId)
+        response.status(400).send('game not found')
+        return
+      }
+      console.log('gameRef', gameRef)
+
+      // TODO validate orders
+      const roundQuery = await gameRef.collection('rounds').where('name', '==', round).get()
+      if (roundQuery.size !== 1) {
+        console.log('failed to find round in DB', gameID, round)
+        response.status(400).send('failed to find round')
+        return
+      }
+      console.log('roundQuery', roundQuery)
+
+      let roundDoc = roundQuery.docs[0]
+      let roundRef = roundDoc.ref
+
+      const existingOrders = roundDoc.get('orders')
+      console.log('existingOrders', existingOrders)
+      let updatedOrders = Object.assign({}, existingOrders, orders)
+      console.log('updatedOrders', updatedOrders)
+      await roundRef.update({ orders: updatedOrders })
+
+      response.status(200).send('')
+    })
+  })
+})
+
+exports.getOrderDetail = functions.region('europe-west2').https.onRequest((request, response) => {
+  cors(request, response, async () => {
+    await auth(request, response, async (user) => {
+      const gameID = request.query.gameID
+      const gameRef = admin.firestore().collection('games').doc(gameID)
+      if (!gameRef) {
+        console.log('game not found', gameId)
+        response.status(400).send('game not found')
+        return
+      }
+
+      const game = await gameRef.get()
+      if (game.get('currentState') !== 'Active') {
+        response.status(400).send('game not active, orders not available')
+        return
+      }
+
+      const currentRound = game.get('currentRound')
+      const roundQuery = await gameRef.collection('rounds').where('name', '==', currentRound).get()
+      if (roundQuery.size !== 1) {
+        console.log('failed to find round in DB', gameID, round)
+        response.status(500).send('failed to find round')
+        return
+      }
+      const round = roundQuery.docs[0]
+
+      const userQuery = await admin.firestore().collection('users').where('userUID', '==', user.uid).get()
+      if (userQuery.size !== 1) {
+        console.log('failed to find user in DB')
+        response.status(500).send('failed to find user')
+        return
+      }
+      const dbUser = userQuery.docs[0]
+
+      const playerCountry = game.get('countryMap')[dbUser.id]
+      const playerOrders = round.get('orders')[playerCountry]
+
+      const result = {
+        orders: playerOrders,
+        country: playerCountry,
+        round: currentRound
+      }
+
+      response.status(200).send(result)
     })
   })
 })
