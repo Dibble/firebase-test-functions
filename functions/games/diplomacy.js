@@ -1,11 +1,4 @@
-const admin = require('firebase-admin')
-
-const orderedStates = [
-  'Setup',
-  'Countries Assigned',
-  'Active',
-  'Complete'
-]
+const games = require('../data/games')
 
 const startingUnits = {
   'Austria': [
@@ -46,21 +39,35 @@ const startingUnits = {
   ]
 }
 
-const startGame = async (gameRef) => {
-  await gameRef.update({
-    'currentState': 'Active',
-    'currentRound': 'Spring 1901',
-    'units': startingUnits
-  })
+const states = [
+  'Setup',
+  'Countries Assigned',
+  'Active',
+  'Complete'
+]
+
+exports.startGame = async (gameID) => {
+  const gameData = await games.getGameByID(gameID)
+  if (gameData && gameData.currentState && gameData.currentState === 'Countries Assigned') {
+    await games.updateGameByID(gameID, {
+      'currentState': 'Active',
+      'currentRound': 'Spring 1901',
+      'units': startingUnits
+    })
+  }
 }
 
-const getByRef = async (gameRef) => {
-  let game = await gameRef.get()
-  let gamePlayers = await Promise.all(game.get('players').map(async playerRef => {
+exports.getGameData = async (gameID) => {
+  const gameData = await games.getGameByID(gameID)
+  if (!gameData) {
+    return null
+  }
+
+  let gamePlayers = await Promise.all(gameData.players.map(async playerRef => {
     let player = await playerRef.get()
     let userUID = player.get('userUID')
-    let user = await admin.auth().getUser(userUID)
-    let country = game.get('countryMap') ? game.get('countryMap')[playerRef.id] : null
+    let user = await users.getUserAuthData(userUID)
+    let country = gameData.countryMap ? gameData.countryMap[playerRef.id] : null
 
     return {
       id: playerRef.id,
@@ -68,21 +75,15 @@ const getByRef = async (gameRef) => {
       email: user.email,
       name: user.displayName,
       country,
-      units: game.get('units') ? game.get('units')[country] : null
+      units: gameData.units ? gameData.units[country] : null
     }
   }))
 
   return {
-    id: gameRef.id,
-    name: game.get('name'),
+    id: gameID,
+    name: gameData.name,
     players: gamePlayers,
-    currentState: game.get('currentState'),
-    currentRound: game.get('currentRound')
+    currentState: gameData.currentState,
+    currentRound: gameData.currentRound
   }
 }
-
-const getByRefs = async (gameRefs) => {
-  return await Promise.all(gameRefs.map(async (gameRef) => await getByRef(gameRef)))
-}
-
-module.exports = { getByRef, getByRefs, startGame }

@@ -4,8 +4,9 @@ const admin = require('firebase-admin')
 const cors = require('cors')({ origin: true })
 
 const { auth } = require('./auth')
-const games = require('./games')
+const games = require('./data/games')
 const users = require('./data/users')
+const diplomacy = require('./games/diplomacy')
 
 admin.initializeApp()
 
@@ -14,20 +15,13 @@ exports.createUser = functions.region('europe-west2').auth.user().onCreate(users
 exports.getMyGames = functions.region('europe-west2').https.onRequest((request, response) => {
   cors(request, response, async () => {
     await auth(request, response, async ({ uid }) => {
-      let user = await users.queryByUID(uid)
-      if (!user) {
-        response.status(500).send('user not found')
+      let myGames = await games.getGamesForUser(uid)
+      if (!myGames) {
+        response.status(500).send('failed to get games')
         return
       }
 
-      let gameRefs = user.get('games')
-      if (!gameRefs || gameRefs.length === 0) {
-        console.log('no games found')
-        response.status(200).send([])
-        return
-      }
-
-      response.status(200).send(await games.getByRefs(gameRefs))
+      response.status(200).send(myGames)
     })
   })
 })
@@ -42,26 +36,7 @@ exports.createGame = functions.region('europe-west2').https.onRequest((request, 
         return
       }
 
-      let userRef = user.ref
-      let newGameRef
-      try {
-        newGameRef = await admin.firestore().collection('games').add({ name: gameName, players: [userRef], countryMap: {}, currentState: 'Setup' })
-      } catch (err) {
-        console.error(`error creating new game ${err}`)
-        response.status(500).send('error creating new game')
-        return
-      }
-
-      let existingUserGames = userQuery.docs[0].get('games')
-      let newUserGames = existingUserGames.concat([newGameRef])
-
-      try {
-        await userRef.update({ 'games': newUserGames })
-      } catch (err) {
-        console.error(`error updating user ${err}`)
-      }
-
-      let createdGame = await games.getByRef(newGameRef)
+      let createdGame = await games.createNew(user, gameName)
       response.status(201).send(createdGame)
     })
   })
@@ -69,38 +44,13 @@ exports.createGame = functions.region('europe-west2').https.onRequest((request, 
 
 exports.joinGame = functions.region('europe-west2').https.onRequest((request, response) => {
   cors(request, response, async () => {
-    await auth(request, response, async ({ uid }) => {
-      let gameID = request.body.gameID
-      let gameRef = await admin.firestore().collection('games').doc(gameID)
-
-      let user = await users.queryByUID(uid)
-      if (!user) {
-        response.status(500).send('failed to find user')
+    await auth(request, response, async (user) => {
+      const gameID = request.body.gameID
+      const gameRef = await games.join(user, gameID)
+      if (!gameRef) {
+        response.status(500).status('failed to join game')
         return
       }
-
-      let userRef = user.ref
-
-      let game = await gameRef.get()
-      let existingPlayers = game.get('players')
-
-      if (existingPlayers.length >= 7) {
-        response.status(400).send('game is full')
-        return
-      }
-
-      let newPlayers = existingPlayers.concat([userRef])
-      await gameRef.update({ 'players': newPlayers })
-
-      let existingGames = currentUser.get('games')
-      let newGames
-      if (existingGames) {
-        newGames = existingGames.concat([gameRef])
-      } else {
-        newGames = [gameRef]
-      }
-
-      await userRef.update({ 'games': newGames })
 
       response.status(200).send(await games.getByRef(gameRef))
     })
@@ -162,22 +112,9 @@ exports.startGame = functions.region('europe-west2').https.onRequest((request, r
   cors(request, response, async () => {
     await auth(request, response, async () => {
       const gameID = request.body.gameID
-      const gameRef = admin.firestore().collection('games').doc(gameID)
-      if (!gameRef) {
-        console.log('game not found', gameId)
-        response.status(400).send('game not found')
-        return
-      }
+      await diplomacy.startGame(gameID)
 
-      try {
-        await games.startGame(gameRef)
-      } catch (err) {
-        console.error('failed to start game', err)
-        response.status(500).send('failed to start game')
-        return
-      }
-
-      response.status(200).send(await games.getByRef(gameRef))
+      response.status(200).send(await diplomacy.getGameData(gameID))
     })
   })
 })
