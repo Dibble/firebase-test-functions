@@ -37,6 +37,28 @@ exports.updateGameByID = async (gameID, updateData) => {
   return true
 }
 
+exports.getRoundByName = async (gameID, roundName) => {
+  let gameRef
+  try {
+    gameRef = admin.firestore().collection('games').doc(gameID)
+  } catch (err) {
+    console.log('failed to get game for ID', gameID, err)
+    return null
+  }
+
+  if (!gameRef) {
+    console.log('game not found for ID', gameID)
+    return null
+  }
+
+  const rounds = await gameRef.collection('rounds').where('name', '==', roundName).limit(1).get()
+  if (rounds.empty) {
+    return null
+  }
+
+  return rounds.docs[0].data()
+}
+
 exports.getGamesForUser = async (uid) => {
   let user = await users.queryByUID(uid)
   if (!user) {

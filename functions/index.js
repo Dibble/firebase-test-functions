@@ -29,14 +29,14 @@ exports.getMyGames = functions.region('europe-west2').https.onRequest((request, 
 exports.createGame = functions.region('europe-west2').https.onRequest((request, response) => {
   cors(request, response, async () => {
     await auth(request, response, async ({ uid }) => {
-      let gameName = request.body.name
-      let user = await users.queryByUID(uid)
+      const { name } = request.body
+      const user = await users.queryByUID(uid)
       if (!user) {
         response.status(500).send('duplicate users found')
         return
       }
 
-      let createdGame = await games.createNew(user, gameName)
+      let createdGame = await games.createNew(user, name)
       response.status(201).send(createdGame)
     })
   })
@@ -45,7 +45,7 @@ exports.createGame = functions.region('europe-west2').https.onRequest((request, 
 exports.joinGame = functions.region('europe-west2').https.onRequest((request, response) => {
   cors(request, response, async () => {
     await auth(request, response, async (user) => {
-      const gameID = request.body.gameID
+      const { gameID } = request.body
       const gameRef = await games.join(user, gameID)
       if (!gameRef) {
         response.status(500).status('failed to join game')
@@ -60,17 +60,16 @@ exports.joinGame = functions.region('europe-west2').https.onRequest((request, re
 exports.getGameDetail = functions.region('europe-west2').https.onRequest((request, response) => {
   cors(request, response, async () => {
     await auth(request, response, async () => {
-      let gameId = request.query.id
-      let gameRef = admin.firestore().collection('games').doc(gameId)
+      const gameID = request.query.id
+      const gameData = await diplomacy.getGameData(gameID)
 
-      if (!gameRef) {
+      if (!gameData) {
         console.log('game not found', gameId)
         response.status(404).send('Not Found')
         return
       }
 
-      let gameDetail = await games.getByRef(gameRef)
-      response.status(200).send(gameDetail)
+      response.status(200).send(gameData)
     })
   })
 })

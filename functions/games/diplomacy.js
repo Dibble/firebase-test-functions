@@ -1,4 +1,5 @@
 const games = require('../data/games')
+const users = require('../data/users')
 
 const startingUnits = {
   'Austria': [
