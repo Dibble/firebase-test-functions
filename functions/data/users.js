@@ -34,3 +34,21 @@ exports.queryByUID = async (uid) => {
 
   return userQuery.docs[0]
 }
+
+exports.getUserByID = async (id) => {
+  let userRef
+  try {
+    userRef = admin.firestore().collection('users').doc(id)
+  } catch (err) {
+    console.log('failed to get user for ID', id, err)
+    return null
+  }
+
+  if (!userRef) {
+    console.log('user not found for ID', id)
+    return null
+  }
+
+  const user = await userRef.get()
+  return user.data()
+}

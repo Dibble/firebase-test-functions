@@ -60,18 +60,27 @@ exports.getRoundByName = async (gameID, roundName) => {
 }
 
 exports.getGamesForUser = async (uid) => {
-  let user = await users.queryByUID(uid)
+  let user = await users.getUserByID(uid)
   if (!user) {
     return null
   }
 
-  let gameRefs = user.get('games')
+  let gameRefs = user.games
   if (!gameRefs || gameRefs.length === 0) {
     console.log('no games found', uid)
     return []
   }
 
-  return await this.getByRefs(gameRefs)
+  let games = await Promise.all(gameRefs.map(async gameRef => {
+    let game = await this.getGameByID(gameRef.id)
+    return {
+      id: gameRef.id,
+      name: game.name,
+      players: game.players.length
+    }
+  }))
+
+  return games
 }
 
 exports.getByRef = async (gameRef) => {
