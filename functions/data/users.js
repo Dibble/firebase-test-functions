@@ -17,7 +17,7 @@ exports.getUserAuthData = async (uid) => {
 
 exports.createNewUser = async (user) => {
   try {
-    await admin.firestore().collection('users').add({ userUID: user.uid, games: [], displayName: user.displayName })
+    await admin.firestore().collection('users').doc(user.uid).set({ games: [], displayName: user.displayName, email: user.email })
     return true
   } catch (err) {
     console.log('failed to create new user', err)
