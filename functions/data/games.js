@@ -110,10 +110,6 @@ exports.getByRef = async (gameRef) => {
   }
 }
 
-exports.getByRefs = async (gameRefs) => {
-  return await Promise.all(gameRefs.map(async (gameRef) => await this.getByRef(gameRef)))
-}
-
 exports.createNew = async (user, name) => {
   let userRef = user.ref
   let newGameRef
