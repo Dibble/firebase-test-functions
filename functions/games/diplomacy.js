@@ -40,11 +40,21 @@ const startingUnits = {
   ]
 }
 
-const states = [
+const gameStates = [
   'Setup',
   'Countries Assigned',
   'Active',
   'Complete'
+]
+
+const countries = [
+  'Austria',
+  'England',
+  'France',
+  'Germany',
+  'Italy',
+  'Russia',
+  'Turkey'
 ]
 
 exports.startGame = async (gameID) => {
@@ -87,4 +97,27 @@ exports.getGameData = async (gameID) => {
     currentState: gameData.currentState,
     currentRound: gameData.currentRound
   }
+}
+
+exports.assignCountries = async (gameID) => {
+  const gameData = await games.getGameByID(gameID)
+  if (!gameData) {
+    return false
+  }
+
+  if (gameData.currentState !== 'Setup') {
+    return false
+  }
+
+  let unassignedCountries = Array.from(countries)
+  let countryMap = {}
+  for (let i = 0; i < gameData.players.length; i++) {
+    let countryIndex = Math.floor(Math.random() * unassignedCountries.length)
+    countryMap[players[i].id] = unassignedCountries[countryIndex]
+
+    unassignedCountries.splice(countryIndex, 1)
+  }
+
+  await games.updateGameByID(gameID, { countryMap, currentState: 'Countries Assigned' })
+  return true
 }

@@ -77,32 +77,14 @@ exports.getGameDetail = functions.region('europe-west2').https.onRequest((reques
 exports.assignCountries = functions.region('europe-west2').https.onRequest((request, response) => {
   cors(request, response, async () => {
     await auth(request, response, async () => {
-      const gameId = request.body.gameID
-      console.log(request.body, gameId)
-      const gameRef = admin.firestore().collection('games').doc(gameId)
-      if (!gameRef) {
-        console.log('game not found', gameId)
-        response.status(400).send('game not found')
+      const { gameID } = request.body
+      const countriesAssigned = await diplomacy.assignCountries(gameID)
+      if (!countriesAssigned) {
+        response.status(400).send('failed to assign countries')
         return
       }
 
-      const game = await gameRef.get()
-      let players = game.get('players')
-      let unassignedCountries = ['Austria', 'England', 'France', 'Germany', 'Italy', 'Russia', 'Turkey']
-
-      let countryMap = {}
-      for (let i = 0; i < players.length; i++) {
-        let countryIndex = Math.floor(Math.random() * unassignedCountries.length)
-        countryMap[players[i].id] = unassignedCountries[countryIndex]
-
-        unassignedCountries.splice(countryIndex, 1)
-      }
-      console.log(JSON.stringify(countryMap))
-
-      await gameRef.update({ 'countryMap': countryMap, currentState: 'Countries Assigned' })
-      let updatedGame = await games.getByRef(gameRef)
-
-      response.status(200).send(updatedGame)
+      response.status(200).send(await diplomacy.getGameData(gameID))
     })
   })
 })
