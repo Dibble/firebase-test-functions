@@ -83,33 +83,6 @@ exports.getGamesForUser = async (uid) => {
   return games
 }
 
-exports.getByRef = async (gameRef) => {
-  let game = await gameRef.get()
-  let gamePlayers = await Promise.all(game.get('players').map(async playerRef => {
-    let player = await playerRef.get()
-    let userUID = player.get('userUID')
-    let user = await users.getUserAuthData(userUID)
-    let country = game.get('countryMap') ? game.get('countryMap')[playerRef.id] : null
-
-    return {
-      id: playerRef.id,
-      userUID,
-      email: user.email,
-      name: user.displayName,
-      country,
-      units: game.get('units') ? game.get('units')[country] : null
-    }
-  }))
-
-  return {
-    id: gameRef.id,
-    name: game.get('name'),
-    players: gamePlayers,
-    currentState: game.get('currentState'),
-    currentRound: game.get('currentRound')
-  }
-}
-
 exports.createNew = async (user, name) => {
   let userRef = user.ref
   let newGameRef
@@ -130,7 +103,7 @@ exports.createNew = async (user, name) => {
     return null
   }
 
-  return await this.getByRef(newGameRef)
+  return await this.getGameByID(newGameRef.id)
 }
 
 exports.join = async (authUser, gameID) => {

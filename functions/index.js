@@ -52,7 +52,7 @@ exports.joinGame = functions.region('europe-west2').https.onRequest((request, re
         return
       }
 
-      response.status(200).send(await games.getByRef(gameRef))
+      response.status(200).send(await diplomacy.getGameData(gameID))
     })
   })
 })
