@@ -139,41 +139,27 @@ exports.getOrderDetail = functions.region('europe-west2').https.onRequest((reque
   cors(request, response, async () => {
     await auth(request, response, async ({ uid }) => {
       const gameID = request.query.gameID
-      const gameRef = admin.firestore().collection('games').doc(gameID)
-      if (!gameRef) {
-        console.log('game not found', gameId)
-        response.status(400).send('game not found')
+      const game = await diplomacy.getGameData(gameID)
+      if (!game) {
+        response.status(404).send('game not found')
         return
       }
 
-      const game = await gameRef.get()
-      if (game.get('currentState') !== 'Active') {
+      if (game.currentState !== 'Active') {
         response.status(400).send('game not active, orders not available')
         return
       }
 
-      const currentRound = game.get('currentRound')
-      const roundQuery = await gameRef.collection('rounds').where('name', '==', currentRound).get()
-      if (roundQuery.size !== 1) {
-        console.log('failed to find round in DB', gameID, round)
-        response.status(500).send('failed to find round')
-        return
-      }
-      const round = roundQuery.docs[0]
-
-      let user = await users.queryByUID(uid)
-      if (!user) {
-        response.status(500).send('failed to find user')
-        return
+      const round = await games.getRoundByName(gameID, game.currentRound)
+      if (!round) {
+        response.status(500).send('failed to find current round')
       }
 
-      const playerCountry = game.get('countryMap')[user.id]
-      const playerOrders = round.get('orders')[playerCountry]
-
+      const currentPlayer = game.players.filter(player => player.id === uid)[0]
       const result = {
-        orders: playerOrders,
-        country: playerCountry,
-        round: currentRound
+        orders: round.orders[currentPlayer.country],
+        country: currentPlayer.country,
+        round: game.currentRound
       }
 
       response.status(200).send(result)
