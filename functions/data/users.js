@@ -1,20 +1,5 @@
 const admin = require('firebase-admin')
 
-exports.getUserAuthData = async (uid) => {
-  let user
-  try {
-    user = await admin.auth().getUser(uid)
-  } catch (err) {
-    console.log('failed to get user by uid', uid)
-    return null
-  }
-
-  return {
-    email: user.email,
-    displayName: user.displayName,
-  }
-}
-
 exports.createNewUser = async (user) => {
   try {
     await admin.firestore().collection('users').doc(user.uid).set({ games: [], displayName: user.displayName, email: user.email })

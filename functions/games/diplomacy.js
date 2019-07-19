@@ -76,15 +76,12 @@ exports.getGameData = async (gameID) => {
 
   let gamePlayers = await Promise.all(gameData.players.map(async playerRef => {
     let player = await playerRef.get()
-    let userUID = player.get('userUID')
-    let user = await users.getUserAuthData(userUID)
     let country = gameData.countryMap ? gameData.countryMap[playerRef.id] : null
 
     return {
       id: playerRef.id,
-      userUID,
-      email: user.email,
-      name: user.displayName,
+      email: player.email,
+      name: player.displayName,
       country,
       units: gameData.units ? gameData.units[country] : null
     }
