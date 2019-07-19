@@ -80,8 +80,8 @@ exports.getGameData = async (gameID) => {
 
     return {
       id: playerRef.id,
-      email: player.email,
-      name: player.displayName,
+      email: player.get('email'),
+      name: player.get('displayName'),
       country,
       units: gameData.units ? gameData.units[country] : null
     }
