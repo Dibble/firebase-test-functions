@@ -1,5 +1,6 @@
 const admin = require('firebase-admin')
 const users = require('./users')
+const diplomacy = require('../games/diplomacy')
 
 exports.getGameByID = async (gameID) => {
   let gameRef
@@ -103,7 +104,7 @@ exports.createNew = async (user, name) => {
     return null
   }
 
-  return await this.getGameByID(newGameRef.id)
+  return await diplomacy.getGameData(newGameRef.id)
 }
 
 exports.join = async (authUser, gameID) => {
